@@ -31,7 +31,11 @@ func builtinFuncs() Funcs {
 		return strconv.ParseBool(s)
 	}
 	fs["[]string"] = func(s string) (any, error) {
-		return strings.Split(s, ","), nil
+		sl := strings.Split(s, ",")
+		for i := 0; i < len(sl); i++ {
+			sl[i] = strings.TrimSpace(sl[i])
+		}
+		return sl, nil
 	}
 	fs["[]int"] = func(s string) (any, error) {
 		return slices.Convert(strings.Split(s, ","), slices.ParseInt)

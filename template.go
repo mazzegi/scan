@@ -6,6 +6,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Result struct {
+	items map[string]any
+}
+
 type Item interface{}
 
 type Template struct {
@@ -28,98 +32,64 @@ func (t *Template) Prefix() string {
 }
 
 //
-
-func ParseTemplate(name string, s string) (*Template, error) {
-	items, err := newItemsParser(s).parse()
-	if err != nil {
-		return nil, err
+func (t *Template) Eval(s string, funcs Funcs) (*Result, error) {
+	res := &Result{
+		items: map[string]any{},
 	}
-	//check items
-	lastWasEvaler := false
-	for _, item := range items {
-		switch item.(type) {
-		case Evaler:
-			if lastWasEvaler {
-				return nil, errors.Errorf("an evaler cannot immediately follow an evaler")
+	s = strings.TrimSpace(s)
+	var pos int = 0
+
+	eatWhite := func() int {
+		var eaten int
+		for {
+			if s[pos] != ' ' {
+				return eaten
 			}
-			lastWasEvaler = true
-		default:
-			lastWasEvaler = false
+			pos++
+			if pos >= len(s) {
+				return eaten
+			}
+			eaten++
 		}
 	}
 
-	return &Template{
-		name:  name,
-		items: items,
-	}, nil
-}
+	for i, item := range t.items {
+		eatWhite()
+		if pos >= len(s) {
+			return nil, errors.Errorf("EOF")
+		}
+		switch item := item.(type) {
+		case string:
+			if !strings.HasPrefix(s[pos:], item) {
+				return nil, errors.Errorf("no match for string %q", item)
+			}
+			pos += len(item)
+		case Evaler:
+			var es string
+			if i == len(t.items)-1 {
+				es = s[pos:]
+			} else {
+				//peek next string
+				next, ok := t.items[i+1].(string)
+				if !ok {
+					return nil, errors.Errorf("next is not a string")
+				}
+				nextIdx := strings.Index(s[pos:], next)
+				if nextIdx < 0 {
+					return nil, errors.Errorf("no match for next %q", next)
+				}
+				es = s[pos : pos+nextIdx]
+			}
+			es = strings.TrimSpace(es)
 
-//
-type itemParseFunc func() (itemParseFunc, error)
-
-type itemsParser struct {
-	rs    []rune
-	pos   int
-	items []Item
-}
-
-func newItemsParser(s string) *itemsParser {
-	p := &itemsParser{
-		rs:    []rune(s),
-		pos:   0,
-		items: []Item{},
-	}
-	return p
-}
-
-func (p *itemsParser) parse() ([]Item, error) {
-	fnc := p.parseText
-	var err error
-	for fnc != nil {
-		fnc, err = fnc()
-		if err != nil {
-			return nil, err
+			v, err := item.Eval(es, funcs)
+			if err != nil {
+				return nil, errors.Wrapf(err, "eval %q", es)
+			}
+			res.items[item.name] = v
+			pos += len(es)
 		}
 	}
-	return p.items, nil
-}
 
-func (p *itemsParser) parseText() (itemParseFunc, error) {
-	var text string
-	defer func() {
-		text = strings.TrimSpace(text)
-		if text == "" {
-			return
-		}
-		p.items = append(p.items, text)
-	}()
-
-	for {
-		if p.pos >= len(p.rs) {
-			return nil, nil
-		}
-		if strings.HasPrefix(string(p.rs[p.pos:]), "{{") {
-			p.pos += 2
-			return p.parseEvaler, nil
-		}
-		text += string(p.rs[p.pos])
-		p.pos++
-	}
-}
-
-func (p *itemsParser) parseEvaler() (itemParseFunc, error) {
-	idx := strings.Index(string(p.rs[p.pos:]), "}}")
-	if idx < 0 {
-		return nil, errors.Errorf("no closing }} found")
-	}
-	sub := p.rs[p.pos : p.pos+idx]
-
-	ev, err := ParseEvaler(string(sub))
-	if err != nil {
-		return nil, errors.Wrapf(err, "parse-evaler %q", sub)
-	}
-	p.items = append(p.items, ev)
-
-	p.pos += idx + 2
-	return p.parseText, nil
+	return res, nil
 }

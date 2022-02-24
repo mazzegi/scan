@@ -37,3 +37,15 @@ func ParseEvaler(s string) (Evaler, error) {
 	}
 	return e, nil
 }
+
+func (e Evaler) Eval(s string, funcs Funcs) (any, error) {
+	fnc, ok := funcs[e.funcName]
+	if !ok {
+		return nil, errors.Errorf("no such func %q", e.funcName)
+	}
+	v, err := fnc(s)
+	if err != nil {
+		return nil, errors.Wrapf(err, "call-func %q", e.funcName)
+	}
+	return v, nil
+}
