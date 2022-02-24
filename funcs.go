@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/mazzegi/slices"
 )
 
 type EvalFunc func(s string) (any, error)
@@ -22,27 +22,25 @@ func builtinFuncs() Funcs {
 	}
 	fs["int"] = func(s string) (any, error) {
 		n, err := strconv.ParseInt(s, 10, 64)
-		if err != nil {
-			return nil, errors.Wrapf(err, "parse-int %q", s)
-		}
-		return n, nil
+		return int(n), err
 	}
 	fs["float"] = func(s string) (any, error) {
-		f, err := strconv.ParseFloat(s, 64)
-		if err != nil {
-			return nil, errors.Wrapf(err, "parse-float %q", s)
-		}
-		return f, nil
+		return strconv.ParseFloat(s, 64)
 	}
 	fs["bool"] = func(s string) (any, error) {
-		t, err := strconv.ParseBool(s)
-		if err != nil {
-			return nil, errors.Wrapf(err, "parse-bool %q", s)
-		}
-		return t, nil
+		return strconv.ParseBool(s)
 	}
 	fs["[]string"] = func(s string) (any, error) {
 		return strings.Split(s, ","), nil
+	}
+	fs["[]int"] = func(s string) (any, error) {
+		return slices.Convert(strings.Split(s, ","), slices.ParseInt)
+	}
+	fs["[]float"] = func(s string) (any, error) {
+		return slices.Convert(strings.Split(s, ","), slices.ParseFloat)
+	}
+	fs["[]bool"] = func(s string) (any, error) {
+		return slices.Convert(strings.Split(s, ","), slices.ParseBool)
 	}
 
 	return fs
