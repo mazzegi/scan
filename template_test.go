@@ -169,6 +169,11 @@ func TestEvalTemplate(t *testing.T) {
 		params   map[string]any
 	}{
 		{
+			template: "this one {{name: string}} is here",
+			in:       "this one bro",
+			fail:     true,
+		},
+		{
 			template: "the test {{name: string}} will not fail",
 			in:       "the test test123 will not fail",
 			fail:     false,
@@ -228,6 +233,31 @@ func TestEvalTemplate(t *testing.T) {
 			params: map[string]any{
 				"heroes": []string{"s1", "s2", "s3", "zorro"},
 			},
+		},
+		{
+			template: "this may fail: {{numbers: []int}}.",
+			in:       "this may fail: 11,12,boom .",
+			fail:     true,
+		},
+		{
+			template: "this may also fail due to a unknown func: {{foo: bar}}.",
+			in:       "this may also fail due to a unknown func: bam.",
+			fail:     true,
+		},
+		{
+			template: "this one will not match",
+			in:       "this is something different",
+			fail:     true,
+		},
+		{
+			template: "this one {{name: string}} terminates different",
+			in:       "this one bro terminates",
+			fail:     true,
+		},
+		{
+			template: "this one {{name: string}} terminates different",
+			in:       "this one bro",
+			fail:     true,
 		},
 	}
 	for i, test := range tests {
