@@ -26,25 +26,33 @@ func TestParseTemplate(t *testing.T) {
 		},
 		{
 			name: "test",
-			in:   "some text {{some evaler}}",
+			in:   "some text {{ some: evaler}}",
 			fail: false,
 			expect: &Template{
 				name: "test",
 				items: []Item{
 					"some text",
-					Evaler{raw: "some evaler"},
+					Evaler{
+						raw:      "some: evaler",
+						name:     "some",
+						funcName: "evaler",
+					},
 				},
 			},
 			expectPrefix: "some text",
 		},
 		{
 			name: "test",
-			in:   "{{some evaler in front of}}some text",
+			in:   "{{some evaler: in front of}}some text",
 			fail: false,
 			expect: &Template{
 				name: "test",
 				items: []Item{
-					Evaler{raw: "some evaler in front of"},
+					Evaler{
+						raw:      "some evaler: in front of",
+						name:     "some evaler",
+						funcName: "in front of",
+					},
 					"some text",
 				},
 			},
@@ -52,13 +60,17 @@ func TestParseTemplate(t *testing.T) {
 		},
 		{
 			name: "test",
-			in:   "some text {{some evaler}} and a text behind   ",
+			in:   "some text {{some :evaler}} and a text behind   ",
 			fail: false,
 			expect: &Template{
 				name: "test",
 				items: []Item{
 					"some text",
-					Evaler{raw: "some evaler"},
+					Evaler{
+						raw:      "some :evaler",
+						name:     "some",
+						funcName: "evaler",
+					},
 					"and a text behind",
 				},
 			},
@@ -66,13 +78,17 @@ func TestParseTemplate(t *testing.T) {
 		},
 		{
 			name: "test",
-			in:   "   some text direct before{{some evaler}}and direct behind   ",
+			in:   "   some text direct before{{some: evaler}}and direct behind   ",
 			fail: false,
 			expect: &Template{
 				name: "test",
 				items: []Item{
 					"some text direct before",
-					Evaler{raw: "some evaler"},
+					Evaler{
+						raw:      "some: evaler",
+						name:     "some",
+						funcName: "evaler",
+					},
 					"and direct behind",
 				},
 			},
@@ -80,21 +96,42 @@ func TestParseTemplate(t *testing.T) {
 		},
 		{
 			name:         "test",
-			in:           "some text {{some evaler}} and {{not correctly closing this}",
+			in:           "some text {{some: evaler}} and {{not correctly: closing this}",
 			fail:         true,
 			expect:       nil,
 			expectPrefix: "",
 		},
 		{
 			name:         "test",
-			in:           "some text {{some evaler}} and {{}}",
+			in:           "some text {{some :evaler}} and {{}}",
 			fail:         true,
 			expect:       nil,
 			expectPrefix: "",
 		},
 		{
 			name:         "test",
-			in:           "some text {{some evaler}}{{foo}}",
+			in:           "some text {{some :evaler}}{{foo: evaler}}",
+			fail:         true,
+			expect:       nil,
+			expectPrefix: "",
+		},
+		{
+			name:         "test",
+			in:           "some text {{some evaler}}",
+			fail:         true,
+			expect:       nil,
+			expectPrefix: "",
+		},
+		{
+			name:         "test",
+			in:           "some text {{some: }}",
+			fail:         true,
+			expect:       nil,
+			expectPrefix: "",
+		},
+		{
+			name:         "test",
+			in:           "some text {{: evaler }}",
 			fail:         true,
 			expect:       nil,
 			expectPrefix: "",
