@@ -27,18 +27,6 @@ func (t *Template) Prefix() string {
 	return ""
 }
 
-func (t *Template) appendItem(item Item) error {
-	if _, ok := item.(*Evaler); ok {
-		if len(t.items) > 0 {
-			if _, ok := t.items[len(t.items)-1].(*Evaler); ok {
-				return errors.Errorf("a match-target cannot immediately follwo a match-target")
-			}
-		}
-	}
-	t.items = append(t.items, item)
-	return nil
-}
-
 //
 
 func ParseTemplate(name string, s string) (*Template, error) {
@@ -50,7 +38,7 @@ func ParseTemplate(name string, s string) (*Template, error) {
 	lastWasEvaler := false
 	for _, item := range items {
 		switch item.(type) {
-		case *Evaler:
+		case Evaler:
 			if lastWasEvaler {
 				return nil, errors.Errorf("an evaler cannot immediately follow an evaler")
 			}
@@ -128,7 +116,7 @@ func (p *itemsParser) parseEvaler() (itemParseFunc, error) {
 
 	ev, err := ParseEvaler(string(sub))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "parse-evaler %q", sub)
 	}
 	p.items = append(p.items, ev)
 
