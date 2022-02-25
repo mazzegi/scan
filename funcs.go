@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/mazzegi/slices"
+	"github.com/pkg/errors"
 )
 
 type EvalFunc func(s string) (any, error)
@@ -41,6 +42,15 @@ func BuiltinFuncs() Funcs {
 	}
 	fs["[]bool"] = func(s string) (any, error) {
 		return slices.Convert(strings.Split(s, ","), slices.ParseBool)
+	}
+	fs["byte"] = func(s string) (any, error) {
+		if s == "" {
+			return nil, errors.Errorf("empty string")
+		}
+		return ([]byte(s))[0], nil
+	}
+	fs["[]byte"] = func(s string) (any, error) {
+		return []byte(s), nil
 	}
 
 	return fs
