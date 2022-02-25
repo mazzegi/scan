@@ -32,7 +32,7 @@ func (t *Template) Prefix() string {
 }
 
 //
-func (t *Template) Eval(s string, funcs Funcs) (*Result, error) {
+func (t *Template) Eval(s string, funcs Funcs, caps ...any) (*Result, error) {
 	res := &Result{
 		Items: map[string]any{},
 	}
@@ -48,6 +48,7 @@ func (t *Template) Eval(s string, funcs Funcs) (*Result, error) {
 		}
 	}
 
+	var capsidx int
 	for i, item := range t.items {
 		eatWhite()
 		if pos >= len(s) {
@@ -81,6 +82,14 @@ func (t *Template) Eval(s string, funcs Funcs) (*Result, error) {
 			if err != nil {
 				return nil, errors.Wrapf(err, "eval %q", es)
 			}
+			if capsidx < len(caps) {
+				err := copyAny(v, caps[capsidx])
+				if err != nil {
+					return nil, errors.Wrapf(err, "copy to cap %s", es)
+				}
+				capsidx++
+			}
+
 			res.Items[item.name] = v
 			pos += len(es)
 		}

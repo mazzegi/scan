@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/mazzegi/slices"
+	"github.com/pkg/errors"
 )
 
 func TestParseTemplate(t *testing.T) {
@@ -280,8 +281,8 @@ func TestEvalTemplate(t *testing.T) {
 					t.Fatalf("expect NOT to fail, but got %v", err)
 				}
 			} else {
-				if !reflect.DeepEqual(test.params, res.items) {
-					t.Fatalf("want %v, have %v", test.params, res.items)
+				if !reflect.DeepEqual(test.params, res.Items) {
+					t.Fatalf("want %v, have %v", test.params, res.Items)
 				}
 			}
 		})
@@ -321,8 +322,114 @@ func TestFuncs(t *testing.T) {
 					t.Fatalf("expect NOT to fail, but got %v", err)
 				}
 			} else {
-				if !reflect.DeepEqual(test.params, res.items) {
-					t.Fatalf("want %v, have %v", test.params, res.items)
+				if !reflect.DeepEqual(test.params, res.Items) {
+					t.Fatalf("want %v, have %v", test.params, res.Items)
+				}
+			}
+		})
+	}
+}
+
+func ptrVal[T any](v T) *T {
+	return &v
+}
+
+func ptr[T any]() *T {
+	var v T
+	return &v
+}
+
+func TestCapture(t *testing.T) {
+	type pair struct {
+		first  int
+		second int
+	}
+
+	funcs := builtinFuncs()
+	funcs.Add("pair", func(s string) (any, error) {
+		ns, err := slices.Convert(strings.Split(s, ":"), slices.ParseInt)
+		if err != nil {
+			return nil, err
+		}
+		if len(ns) != 2 {
+			return nil, errors.Errorf("invalid arg count for pair")
+		}
+		return pair{ns[0], ns[1]}, nil
+	})
+
+	tests := []struct {
+		template    string
+		in          string
+		captures    []any
+		fail        bool
+		params      map[string]any
+		expCaptures []any
+	}{
+		{
+			template: "a number {{num: int}} comes in",
+			in:       "a number 42 comes in",
+			captures: []any{ptr[int]()},
+			fail:     false,
+			params: map[string]any{
+				"num": 42,
+			},
+			expCaptures: []any{ptrVal(42)},
+		},
+		{
+			template: "a string {{str: string}} comes in",
+			in:       "a string fortytwo comes in",
+			captures: []any{ptr[string]()},
+			fail:     false,
+			params: map[string]any{
+				"str": "fortytwo",
+			},
+			expCaptures: []any{ptrVal("fortytwo")},
+		},
+		{
+			template: "a string {{str: string}} comes in",
+			in:       "a string fortytwo comes in",
+			captures: []any{ptr[int]()},
+			fail:     true,
+		},
+		{
+			template: "a pair {{foo: pair}} comes in",
+			in:       "a pair 1:2 comes in",
+			captures: []any{ptr[pair]()},
+			fail:     false,
+			params: map[string]any{
+				"foo": pair{1, 2},
+			},
+			expCaptures: []any{ptrVal(pair{1, 2})},
+		},
+		{
+			template: "a pair {{foo: pair}} and a float {{num: float}} comes in",
+			in:       "a pair 1:2 and a float 46732.123 comes in",
+			captures: []any{ptr[pair](), ptr[float64]()},
+			fail:     false,
+			params: map[string]any{
+				"foo": pair{1, 2},
+				"num": 46732.123,
+			},
+			expCaptures: []any{ptrVal(pair{1, 2}), ptrVal(46732.123)},
+		},
+	}
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("test #%02d", i), func(t *testing.T) {
+			tpl, err := ParseTemplate("test", test.template)
+			if err != nil {
+				t.Fatalf("parse failed: %v", err)
+			}
+			res, err := tpl.Eval(test.in, funcs, test.captures...)
+			if err != nil {
+				if !test.fail {
+					t.Fatalf("expect NOT to fail, but got %v", err)
+				}
+			} else {
+				if !reflect.DeepEqual(test.params, res.Items) {
+					t.Fatalf("params: want %v, have %v", test.params, res.Items)
+				}
+				if !reflect.DeepEqual(test.expCaptures, test.captures) {
+					t.Fatalf("captures: want %v, have %v", test.expCaptures, test.captures)
 				}
 			}
 		})
