@@ -419,17 +419,73 @@ func TestCapture(t *testing.T) {
 			if err != nil {
 				t.Fatalf("parse failed: %v", err)
 			}
-			res, err := tpl.Eval(test.in, funcs, test.captures...)
+			res, err := tpl.Eval(test.in, funcs)
 			if err != nil {
 				if !test.fail {
 					t.Fatalf("expect NOT to fail, but got %v", err)
 				}
 			} else {
-				if !reflect.DeepEqual(test.params, res.Items) {
-					t.Fatalf("params: want %v, have %v", test.params, res.Items)
+				err = res.Scan(test.captures...)
+				if err != nil {
+					if !test.fail {
+						t.Fatalf("expect NOT to fail, but got %v", err)
+					}
+				} else {
+
+					if !reflect.DeepEqual(test.params, res.Items) {
+						t.Fatalf("params: want %v, have %v", test.params, res.Items)
+					}
+					if !reflect.DeepEqual(test.expCaptures, test.captures) {
+						t.Fatalf("captures: want %v, have %v", test.expCaptures, test.captures)
+					}
 				}
-				if !reflect.DeepEqual(test.expCaptures, test.captures) {
-					t.Fatalf("captures: want %v, have %v", test.expCaptures, test.captures)
+			}
+		})
+	}
+}
+
+func TestDecode(t *testing.T) {
+	type pair struct {
+		First  int `json:"first"`
+		Second int `json:"second"`
+	}
+
+	funcs := BuiltinFuncs()
+	tests := []struct {
+		template string
+		in       string
+		fail     bool
+		arg      any
+		exparg   any
+	}{
+		{
+			template: "a pair {{first: int}}:{{second: int}} comes in",
+			in:       "a pair 1:2 comes in",
+			arg:      ptr[pair](),
+			exparg:   &pair{1, 2},
+		},
+	}
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("test #%02d", i), func(t *testing.T) {
+			tpl, err := ParseTemplate("test", test.template)
+			if err != nil {
+				t.Fatalf("parse failed: %v", err)
+			}
+			res, err := tpl.Eval(test.in, funcs)
+			if err != nil {
+				if !test.fail {
+					t.Fatalf("expect NOT to fail, but got %v", err)
+				}
+			} else {
+				err = res.Decode(test.arg)
+				if err != nil {
+					if !test.fail {
+						t.Fatalf("expect NOT to fail, but got %v", err)
+					}
+				} else {
+					if !reflect.DeepEqual(test.arg, test.exparg) {
+						t.Fatalf("arg: want %v, have %v", test.exparg, test.arg)
+					}
 				}
 			}
 		})

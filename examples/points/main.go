@@ -35,7 +35,11 @@ func main() {
 	funcs := scan.BuiltinFuncs()
 	funcs.Add("point", func(s string) (any, error) {
 		var p Point
-		_, err := tplPoint.Eval(s, funcs, &p.X, &p.Y, &p.Z)
+		res, err := tplPoint.Eval(s, funcs)
+		if err != nil {
+			return nil, err
+		}
+		err = res.Scan(&p.X, &p.Y, &p.Z)
 		if err != nil {
 			return nil, err
 		}
@@ -50,10 +54,14 @@ func main() {
 		}
 		var name string
 		var pt Point
-		_, err := tplLine.Eval(ln, funcs, &name, &pt)
+		res, err := tplLine.Eval(ln, funcs)
 		if err != nil {
 			fmt.Printf("ERROR: %v\n", err)
 			continue
+		}
+		err = res.Scan(&name, &pt)
+		if err != nil {
+			panic(err)
 		}
 		fmt.Printf("%q => %s\n", name, pt)
 	}

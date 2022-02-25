@@ -63,11 +63,16 @@ func main() {
 			continue
 		}
 		var cmd Command
-		_, err := tpl.Eval(ln, funcs, &cmd.Action, &cmd.X0, &cmd.X1, &cmd.Y0, &cmd.Y1, &cmd.Z0, &cmd.Z1)
+		res, err := tpl.Eval(ln, funcs)
 		if err != nil {
 			fmt.Printf("ERROR: %v\n", err)
 			continue
 		}
+		err = res.Scan(&cmd.Action, &cmd.X0, &cmd.X1, &cmd.Y0, &cmd.Y1, &cmd.Z0, &cmd.Z1)
+		if err != nil {
+			panic(err)
+		}
+
 		fmt.Printf("%s\n", cmd)
 	}
 }

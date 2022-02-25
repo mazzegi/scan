@@ -6,16 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type ResultItem struct {
-	Name  string
-	Value any
-}
-
-type Result struct {
-	//Items map[string]any
-	Items []ResultItem
-}
-
 type Item interface{}
 
 type Template struct {
@@ -38,7 +28,7 @@ func (t *Template) Prefix() string {
 }
 
 //
-func (t *Template) Eval(s string, funcs Funcs, caps ...any) (*Result, error) {
+func (t *Template) Eval(s string, funcs Funcs) (*Result, error) {
 	res := &Result{
 		//Items: map[string]any{},
 	}
@@ -54,7 +44,6 @@ func (t *Template) Eval(s string, funcs Funcs, caps ...any) (*Result, error) {
 		}
 	}
 
-	var capsidx int
 	for i, item := range t.items {
 		eatWhite()
 		if pos >= len(s) {
@@ -87,13 +76,6 @@ func (t *Template) Eval(s string, funcs Funcs, caps ...any) (*Result, error) {
 			v, err := item.Eval(es, funcs)
 			if err != nil {
 				return nil, errors.Wrapf(err, "eval %q", es)
-			}
-			if capsidx < len(caps) {
-				err := copyAny(v, caps[capsidx])
-				if err != nil {
-					return nil, errors.Wrapf(err, "copy to cap %s", es)
-				}
-				capsidx++
 			}
 
 			res.Items = append(res.Items, ResultItem{item.name, v})
