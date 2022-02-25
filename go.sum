@@ -1,2 +1,4 @@
+github.com/mazzegi/slices v0.0.0-20220225112424-2c373b35babc h1:1Fyu5i5BwdxAjxlIQllME/Fps5YMrWsB9lkn21wz0RE=
+github.com/mazzegi/slices v0.0.0-20220225112424-2c373b35babc/go.mod h1:MNr09Z+myotPgFFlqOrr/N32bhzTNuqL5JxtBqTRk9s=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
