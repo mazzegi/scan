@@ -15,7 +15,7 @@ func (fs Funcs) Add(name string, fnc EvalFunc) {
 	fs[name] = fnc
 }
 
-func builtinFuncs() Funcs {
+func BuiltinFuncs() Funcs {
 	fs := Funcs{}
 	fs["string"] = func(s string) (any, error) {
 		return s, nil

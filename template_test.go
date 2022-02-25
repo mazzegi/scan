@@ -164,7 +164,7 @@ func TestParseTemplate(t *testing.T) {
 }
 
 func TestEvalTemplate(t *testing.T) {
-	funcs := builtinFuncs()
+	funcs := BuiltinFuncs()
 
 	tests := []struct {
 		template string
@@ -290,7 +290,7 @@ func TestEvalTemplate(t *testing.T) {
 }
 
 func TestFuncs(t *testing.T) {
-	funcs := builtinFuncs()
+	funcs := BuiltinFuncs()
 	funcs.Add("spliturn", func(s string) (any, error) {
 		return slices.Convert(strings.Split(s, ":"), slices.TrimSpace)
 	})
@@ -345,7 +345,7 @@ func TestCapture(t *testing.T) {
 		second int
 	}
 
-	funcs := builtinFuncs()
+	funcs := BuiltinFuncs()
 	funcs.Add("pair", func(s string) (any, error) {
 		ns, err := slices.Convert(strings.Split(s, ":"), slices.ParseInt)
 		if err != nil {
