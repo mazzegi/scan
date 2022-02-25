@@ -3,7 +3,10 @@ package scan
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/mazzegi/slices"
 )
 
 func TestParseTemplate(t *testing.T) {
@@ -174,6 +177,11 @@ func TestEvalTemplate(t *testing.T) {
 			fail:     true,
 		},
 		{
+			template: "this one {{name: string}} is here {{tail: int}}",
+			in:       "this one bro is here",
+			fail:     true,
+		},
+		{
 			template: "the test {{name: string}} will not fail",
 			in:       "the test test123 will not fail",
 			fail:     false,
@@ -258,6 +266,47 @@ func TestEvalTemplate(t *testing.T) {
 			template: "this one {{name: string}} terminates different",
 			in:       "this one bro",
 			fail:     true,
+		},
+	}
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("test #%02d", i), func(t *testing.T) {
+			tpl, err := ParseTemplate("test", test.template)
+			if err != nil {
+				t.Fatalf("parse failed: %v", err)
+			}
+			res, err := tpl.Eval(test.in, funcs)
+			if err != nil {
+				if !test.fail {
+					t.Fatalf("expect NOT to fail, but got %v", err)
+				}
+			} else {
+				if !reflect.DeepEqual(test.params, res.items) {
+					t.Fatalf("want %v, have %v", test.params, res.items)
+				}
+			}
+		})
+	}
+}
+
+func TestFuncs(t *testing.T) {
+	funcs := builtinFuncs()
+	funcs.Add("spliturn", func(s string) (any, error) {
+		return slices.Convert(strings.Split(s, ":"), slices.TrimSpace)
+	})
+
+	tests := []struct {
+		template string
+		in       string
+		fail     bool
+		params   map[string]any
+	}{
+		{
+			template: "this urn {{urn: spliturn}} is here",
+			in:       "this urn is:a:urn: with is here",
+			fail:     false,
+			params: map[string]any{
+				"urn": []string{"is", "a", "urn", "with"},
+			},
 		},
 	}
 	for i, test := range tests {

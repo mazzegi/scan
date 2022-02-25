@@ -7,7 +7,7 @@ import (
 )
 
 type Result struct {
-	items map[string]any
+	Items map[string]any
 }
 
 type Item interface{}
@@ -34,22 +34,17 @@ func (t *Template) Prefix() string {
 //
 func (t *Template) Eval(s string, funcs Funcs) (*Result, error) {
 	res := &Result{
-		items: map[string]any{},
+		Items: map[string]any{},
 	}
 	s = strings.TrimSpace(s)
 	var pos int = 0
 
-	eatWhite := func() int {
-		var eaten int
-		for {
+	eatWhite := func() {
+		for pos < len(s) {
 			if s[pos] != ' ' {
-				return eaten
+				return
 			}
 			pos++
-			if pos >= len(s) {
-				return eaten
-			}
-			eaten++
 		}
 	}
 
@@ -86,7 +81,7 @@ func (t *Template) Eval(s string, funcs Funcs) (*Result, error) {
 			if err != nil {
 				return nil, errors.Wrapf(err, "eval %q", es)
 			}
-			res.items[item.name] = v
+			res.Items[item.name] = v
 			pos += len(es)
 		}
 	}
