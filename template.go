@@ -6,8 +6,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+type ResultItem struct {
+	Name  string
+	Value any
+}
+
 type Result struct {
-	Items map[string]any
+	//Items map[string]any
+	Items []ResultItem
 }
 
 type Item interface{}
@@ -34,7 +40,7 @@ func (t *Template) Prefix() string {
 //
 func (t *Template) Eval(s string, funcs Funcs, caps ...any) (*Result, error) {
 	res := &Result{
-		Items: map[string]any{},
+		//Items: map[string]any{},
 	}
 	s = strings.TrimSpace(s)
 	var pos int = 0
@@ -90,7 +96,7 @@ func (t *Template) Eval(s string, funcs Funcs, caps ...any) (*Result, error) {
 				capsidx++
 			}
 
-			res.Items[item.name] = v
+			res.Items = append(res.Items, ResultItem{item.name, v})
 			pos += len(es)
 		}
 	}

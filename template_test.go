@@ -170,7 +170,7 @@ func TestEvalTemplate(t *testing.T) {
 		template string
 		in       string
 		fail     bool
-		params   map[string]any
+		params   []ResultItem
 	}{
 		{
 			template: "this one {{name: string}} is here",
@@ -186,61 +186,61 @@ func TestEvalTemplate(t *testing.T) {
 			template: "the test {{name: string}} will not fail",
 			in:       "the test test123 will not fail",
 			fail:     false,
-			params: map[string]any{
-				"name": "test123",
+			params: []ResultItem{
+				{"name", "test123"},
 			},
 		},
 		{
 			template: "neither will {{name: string}}, which scans for {{number: int}}",
 			in:       "neither will test42$, which scans for 47823",
 			fail:     false,
-			params: map[string]any{
-				"name":   "test42$",
-				"number": 47823,
+			params: []ResultItem{
+				{"name", "test42$"},
+				{"number", 47823},
 			},
 		},
 		{
 			template: "neither will {{name: string}}, which scans for {{number: float}} and some more",
 			in:       "neither will test42$, which scans for 0.7436 and some more",
 			fail:     false,
-			params: map[string]any{
-				"name":   "test42$",
-				"number": 0.7436,
+			params: []ResultItem{
+				{"name", "test42$"},
+				{"number", 0.7436},
 			},
 		},
 		{
 			template: "neither will {{name: string}}, which scans for {{flag: bool}} and some more",
 			in:       "neither will foo bar baz, which scans for true and some more",
 			fail:     false,
-			params: map[string]any{
-				"name": "foo bar baz",
-				"flag": true,
+			params: []ResultItem{
+				{"name", "foo bar baz"},
+				{"flag", true},
 			},
 		},
 		{
 			template: "{{nums: []int}} should be an array of int",
 			in:       "42,56, 782 should be an array of int",
 			fail:     false,
-			params: map[string]any{
-				"nums": []int{42, 56, 782},
+			params: []ResultItem{
+				{"nums", []int{42, 56, 782}},
 			},
 		},
 		{
 			template: "{{nums: []int}} should be an array of int followed by an arry of float and the a bool {{floats: []float}} and {{bools: []bool}}",
 			in:       "42,56, 782 should be an array of int followed by an arry of float and the a bool 1.3, 7.45, 8976.22, 2e-3 and true, false, true",
 			fail:     false,
-			params: map[string]any{
-				"nums":   []int{42, 56, 782},
-				"floats": []float64{1.3, 7.45, 8976.22, 2e-3},
-				"bools":  []bool{true, false, true},
+			params: []ResultItem{
+				{"nums", []int{42, 56, 782}},
+				{"floats", []float64{1.3, 7.45, 8976.22, 2e-3}},
+				{"bools", []bool{true, false, true}},
 			},
 		},
 		{
 			template: "strings should work either: {{heroes: []string}}.",
 			in:       "strings should work either: s1, s2, s3, zorro.",
 			fail:     false,
-			params: map[string]any{
-				"heroes": []string{"s1", "s2", "s3", "zorro"},
+			params: []ResultItem{
+				{"heroes", []string{"s1", "s2", "s3", "zorro"}},
 			},
 		},
 		{
@@ -299,14 +299,14 @@ func TestFuncs(t *testing.T) {
 		template string
 		in       string
 		fail     bool
-		params   map[string]any
+		params   []ResultItem
 	}{
 		{
 			template: "this urn {{urn: spliturn}} is here",
 			in:       "this urn is:a:urn: with is here",
 			fail:     false,
-			params: map[string]any{
-				"urn": []string{"is", "a", "urn", "with"},
+			params: []ResultItem{
+				{"urn", []string{"is", "a", "urn", "with"}},
 			},
 		},
 	}
@@ -362,7 +362,7 @@ func TestCapture(t *testing.T) {
 		in          string
 		captures    []any
 		fail        bool
-		params      map[string]any
+		params      []ResultItem
 		expCaptures []any
 	}{
 		{
@@ -370,8 +370,8 @@ func TestCapture(t *testing.T) {
 			in:       "a number 42 comes in",
 			captures: []any{ptr[int]()},
 			fail:     false,
-			params: map[string]any{
-				"num": 42,
+			params: []ResultItem{
+				{"num", 42},
 			},
 			expCaptures: []any{ptrVal(42)},
 		},
@@ -380,8 +380,8 @@ func TestCapture(t *testing.T) {
 			in:       "a string fortytwo comes in",
 			captures: []any{ptr[string]()},
 			fail:     false,
-			params: map[string]any{
-				"str": "fortytwo",
+			params: []ResultItem{
+				{"str", "fortytwo"},
 			},
 			expCaptures: []any{ptrVal("fortytwo")},
 		},
@@ -396,8 +396,8 @@ func TestCapture(t *testing.T) {
 			in:       "a pair 1:2 comes in",
 			captures: []any{ptr[pair]()},
 			fail:     false,
-			params: map[string]any{
-				"foo": pair{1, 2},
+			params: []ResultItem{
+				{"foo", pair{1, 2}},
 			},
 			expCaptures: []any{ptrVal(pair{1, 2})},
 		},
@@ -406,9 +406,9 @@ func TestCapture(t *testing.T) {
 			in:       "a pair 1:2 and a float 46732.123 comes in",
 			captures: []any{ptr[pair](), ptr[float64]()},
 			fail:     false,
-			params: map[string]any{
-				"foo": pair{1, 2},
-				"num": 46732.123,
+			params: []ResultItem{
+				{"foo", pair{1, 2}},
+				{"num", 46732.123},
 			},
 			expCaptures: []any{ptrVal(pair{1, 2}), ptrVal(46732.123)},
 		},
